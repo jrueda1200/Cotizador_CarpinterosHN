@@ -13,7 +13,7 @@
     :root {
       --primary: #2563eb;
       --primary-soft: #eff6ff;
-      --bg: #020617;
+      --bg: #f3f4f6;
       --card: #ffffff;
       --border: #e5e7eb;
       --text-main: #111827;
@@ -30,9 +30,7 @@
     body {
       margin: 0;
       min-height: 100vh;
-      background:
-        radial-gradient(circle at top, #1d4ed8 0, rgba(15,23,42,0.3) 35%),
-        radial-gradient(circle at bottom, #0ea5e9 0, #020617 55%);
+      background: var(--bg);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text-main);
       display: flex;
@@ -46,7 +44,7 @@
     }
 
     .app-header {
-      color: #e5e7eb;
+      color: #111827;
       text-align: center;
       margin-bottom: 14px;
     }
@@ -61,7 +59,7 @@
     .app-header p {
       margin: 0;
       font-size: 0.85rem;
-      color: #9ca3af;
+      color: #6b7280;
     }
 
     .card {
@@ -69,8 +67,8 @@
       border-radius: var(--radius-lg);
       padding: 18px 16px 20px;
       box-shadow:
-        0 20px 55px rgba(15, 23, 42, 0.55),
-        0 0 0 1px rgba(15, 23, 42, 0.12);
+        0 12px 30px rgba(15, 23, 42, 0.08),
+        0 0 0 1px rgba(15, 23, 42, 0.04);
     }
 
     @media (min-width: 768px) {
@@ -108,7 +106,7 @@
 
     .field {
       flex: 1;
-      min-width: 180px;
+      min-width: 220px;
       display: flex;
       flex-direction: column;
       gap: 4px;
@@ -173,7 +171,6 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 650px;
       font-size: 0.86rem;
       background: #ffffff;
     }
@@ -187,7 +184,6 @@
       padding: 7px 8px;
       border-bottom: 1px solid #e5e7eb;
       text-align: left;
-      white-space: nowrap;
     }
 
     th {
@@ -263,7 +259,7 @@
     .btn-primary {
       background: var(--primary);
       color: #ffffff;
-      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.4);
+      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.3);
     }
 
     .btn-primary:hover {
@@ -351,7 +347,7 @@
       text-align: right;
     }
 
-    /* Mobile tweaks */
+    /* Mobile: disposición vertical y tarjetas por ítem con stroke claro */
     @media (max-width: 600px) {
       body {
         padding: 10px;
@@ -365,6 +361,12 @@
       }
       .app-header p {
         font-size: 0.8rem;
+      }
+      .row {
+        flex-direction: column;
+      }
+      .field {
+        min-width: 100%;
       }
       .btn-row {
         flex-direction: column;
@@ -380,6 +382,59 @@
       button {
         width: 100%;
         justify-content: center;
+      }
+
+      .table-scroll {
+        overflow-x: visible;
+      }
+      table,
+      tbody,
+      tr,
+      td {
+        display: block;
+        width: 100%;
+      }
+      thead {
+        display: none;
+      }
+      tbody tr {
+        margin: 8px 0;
+        padding: 10px 10px 8px;
+        border-radius: 12px;
+        border: 1px solid var(--border); /* stroke de la tarjeta */
+        background: #ffffff;
+        box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+      }
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+      td {
+        border-bottom: none;
+        padding: 5px 0;
+      }
+      td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 3px;
+      }
+      td:last-child {
+        text-align: right;
+        margin-top: 6px;
+      }
+      td:last-child::before {
+        content: "";
+      }
+      /* stroke claro en los inputs dentro de la tarjeta */
+      tbody tr td input {
+        background: #f9fafb;
+        border-color: #d1d5db;
+      }
+      tbody tr td input:focus {
+        background: #ffffff;
+        border-color: #9ca3af;
       }
     }
   </style>
@@ -407,7 +462,7 @@
 
       <div class="field">
         <label for="descripcion">Descripción del trabajo</label>
-        <textarea id="descripcion" placeholder="Ej.: Elaboración y enreglado de ceiling con madera de Laurel entintado color roble claro."></textarea>
+        <textarea id="descripcion" placeholder="Ej.: Reparación, instalación o detalle del trabajo a realizar."></textarea>
       </div>
 
       <!-- ITEMS -->
@@ -424,28 +479,28 @@
             <table>
               <thead>
                 <tr>
-                  <th style="width: 40%;">Ítem / detalle</th>
-                  <th style="width: 15%;">Cantidad</th>
-                  <th style="width: 20%;">Precio unitario (L.)</th>
-                  <th style="width: 20%;">Total ítem (L.)</th>
-                  <th style="width: 5%; text-align:center;"> </th>
+                  <th>Ítem / detalle</th>
+                  <th>Cantidad</th>
+                  <th>Precio unitario (L.)</th>
+                  <th>Total ítem (L.)</th>
+                  <th style="text-align:center;"> </th>
                 </tr>
               </thead>
               <tbody id="items-body">
                 <!-- Fila inicial -->
                 <tr>
-                  <td><input type="text" class="item-detalle" placeholder="Ej.: Madera Laurel" /></td>
-                  <td><input type="number" step="0.01" class="item-cantidad" placeholder="0" /></td>
-                  <td><input type="number" step="0.01" class="item-precio" placeholder="0.00" /></td>
-                  <td><input type="number" step="0.01" class="item-total" readonly /></td>
-                  <td style="text-align:center;"><button type="button" class="btn-danger btn-delete-row" title="Eliminar fila">X</button></td>
+                  <td data-label="Ítem / detalle"><input type="text" class="item-detalle" placeholder="Ej.: Mano de obra, madera, insumos..." /></td>
+                  <td data-label="Cantidad"><input type="number" step="0.01" class="item-cantidad" placeholder="0" /></td>
+                  <td data-label="Precio unitario (L.)"><input type="number" step="0.01" class="item-precio" placeholder="0.00" /></td>
+                  <td data-label="Total ítem (L.)"><input type="number" step="0.01" class="item-total" readonly /></td>
+                  <td data-label="" style="text-align:center;"><button type="button" class="btn-danger btn-delete-row" title="Eliminar fila">X</button></td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
         <div class="table-hint">
-          <span>⟷</span> Desliza horizontalmente la tabla si no ves todas las columnas en tu pantalla.
+          En celular, cada ítem se muestra como una tarjeta con un recuadro claro para escribir cada parte.
         </div>
 
         <div class="btn-row">
@@ -480,6 +535,15 @@
         </div>
       </div>
 
+      <!-- NOMBRE DEL PDF -->
+      <div style="margin-top: 16px;">
+        <div class="section-title">Descarga</div>
+        <div class="field">
+          <label for="pdfName">Nombre del archivo PDF (opcional)</label>
+          <input type="text" id="pdfName" placeholder="Ej.: presupuesto_cliente_maderas" />
+        </div>
+      </div>
+
       <!-- CONDICIONES -->
       <div class="conditions">
         <div class="section-title">Condiciones y observaciones</div>
@@ -499,7 +563,7 @@
       </div>
 
       <div class="footer-note">
-        Generado con el cotizador en línea.
+        Generado con Carpinteros HN.
       </div>
     </main>
   </div>
@@ -507,11 +571,10 @@
   <script>
     // ============= CONFIGURACIÓN DE EMPRESA PARA EL PDF =============
     const COMPANY_NAME = "Carpinteros HN";
-    const COMPANY_ADDRESS = "Servicios en Linea";
-    const COMPANY_PHONE = "Tel: [+504 95292507]";
-    const COMPANY_EMAIL = "Correo: []";
-    // Si tienes un logo en línea, pon la URL aquí (deja null si no):
-    const COMPANY_LOGO_URL = null; // Ej.: "https://tusitio.com/logo.png"
+    const COMPANY_ADDRESS = "Servicios en línea";
+    const COMPANY_PHONE = "Tel: 96696605";
+    const COMPANY_EMAIL = "Correo: jorgeruedabeta@gmail.com";
+    const COMPANY_LOGO_URL = null;
 
     // ================= FUNCIONES DE CÁLCULO =================
     function toNumber(value) {
@@ -552,11 +615,11 @@
       const tbody = document.getElementById("items-body");
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><input type="text" class="item-detalle" placeholder="Material o servicio" /></td>
-        <td><input type="number" step="0.01" class="item-cantidad" placeholder="0" /></td>
-        <td><input type="number" step="0.01" class="item-precio" placeholder="0.00" /></td>
-        <td><input type="number" step="0.01" class="item-total" readonly /></td>
-        <td style="text-align:center;"><button type="button" class="btn-danger btn-delete-row" title="Eliminar fila">X</button></td>
+        <td data-label="Ítem / detalle"><input type="text" class="item-detalle" placeholder="Material o servicio" /></td>
+        <td data-label="Cantidad"><input type="number" step="0.01" class="item-cantidad" placeholder="0" /></td>
+        <td data-label="Precio unitario (L.)"><input type="number" step="0.01" class="item-precio" placeholder="0.00" /></td>
+        <td data-label="Total ítem (L.)"><input type="number" step="0.01" class="item-total" readonly /></td>
+        <td data-label="" style="text-align:center;"><button type="button" class="btn-danger btn-delete-row" title="Eliminar fila">X</button></td>
       `;
       tbody.appendChild(tr);
     }
@@ -570,6 +633,7 @@
 
       document.getElementById("cliente").value = "";
       document.getElementById("descripcion").value = "";
+      document.getElementById("pdfName").value = "";
       document.getElementById("impuestoPorc").value = 15;
 
       const tbody = document.getElementById("items-body");
@@ -608,12 +672,13 @@
       });
     }
 
-    // ================= GENERACIÓN DE PDF =================
+    // ================= GENERACIÓN DE PDF (sin azul, estilo profesional) =================
     async function generatePDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: "mm", format: "letter" });
 
       const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
       const marginLeft = 18;
       const marginRight = 18;
 
@@ -625,6 +690,7 @@
       const impuesto = document.getElementById("impuesto").value || "0.00";
       const total = document.getElementById("total").value || "0.00";
       const condiciones = document.getElementById("condiciones").value || "";
+      const pdfNameRaw = document.getElementById("pdfName").value.trim();
 
       const tableBody = [];
       const rows = Array.from(document.getElementById("items-body").querySelectorAll("tr"));
@@ -645,7 +711,6 @@
 
       let cursorY = 16;
 
-      // Logo opcional
       if (COMPANY_LOGO_URL) {
         try {
           const imgData = await loadImageAsDataUrl(COMPANY_LOGO_URL);
@@ -655,7 +720,7 @@
         }
       }
 
-      // Datos empresa
+      // Encabezado empresa
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
       doc.text(COMPANY_NAME, marginLeft + 32, cursorY);
@@ -663,10 +728,12 @@
       doc.setFontSize(9);
       doc.text(COMPANY_ADDRESS, marginLeft + 32, cursorY + 5);
       doc.text(COMPANY_PHONE, marginLeft + 32, cursorY + 9);
-      doc.text(COMPANY_EMAIL, marginLeft + 32, cursorY + 13);
+      if (COMPANY_EMAIL.trim() !== "") {
+        doc.text(COMPANY_EMAIL, marginLeft + 32, cursorY + 13);
+      }
 
       // Línea separadora
-      doc.setDrawColor(220, 220, 220);
+      doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.3);
       doc.line(marginLeft, cursorY + 20, pageWidth - marginRight, cursorY + 20);
 
@@ -694,14 +761,18 @@
         cursorY += descripcionLines.length * 5 + 2;
       }
 
-      // Tabla
+      // Tabla tipo presupuesto, sin azul
       doc.autoTable({
         startY: cursorY + 2,
         head: [["Ítem / detalle", "Cantidad", "Precio (L.)", "Total ítem (L.)"]],
         body: tableBody,
         theme: "grid",
-        styles: { fontSize: 9, cellPadding: 2 },
-        headStyles: { fillColor: [37, 99, 235], textColor: 255, halign: "left" },
+        styles: { fontSize: 9, cellPadding: 2, lineColor: [210, 210, 210], lineWidth: 0.2 },
+        headStyles: {
+          fillColor: [242, 242, 242], // gris claro, sin azul
+          textColor: [0, 0, 0],
+          halign: "left"
+        },
         columnStyles: {
           0: { cellWidth: 80 },
           1: { halign: "right", cellWidth: 25 },
@@ -713,14 +784,14 @@
 
       let finalY = doc.lastAutoTable.finalY + 4;
 
-      // Bloque de totales en caja
+      // Bloque de totales
       const boxWidth = 70;
       const boxHeight = 24;
       const boxLeft = pageWidth - marginRight - boxWidth;
       const boxTop = finalY;
 
-      doc.setDrawColor(209, 213, 219);
-      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(200, 200, 200);
+      doc.setFillColor(248, 249, 250);
       if (doc.roundedRect) {
         doc.roundedRect(boxLeft, boxTop, boxWidth, boxHeight, 2, 2, "DF");
       } else {
@@ -739,7 +810,7 @@
       doc.setFontSize(10);
       doc.text(`Total: L. ${formatNumber(total)}`, textX, lineY, { align: "right" });
 
-      finalY = boxTop + boxHeight + 6;
+      finalY = boxTop + boxHeight + 8;
 
       // Condiciones
       if (condiciones.trim() !== "") {
@@ -749,8 +820,17 @@
         doc.text(condLines, marginLeft, finalY);
       }
 
-      const cleanCliente = cliente.replace(/[^a-zA-Z0-9-_]/g, "_") || "cliente";
-      doc.save(`cotizacion_${cleanCliente}.pdf`);
+      // Footer profesional
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      const footerText = `${COMPANY_NAME} · ${COMPANY_PHONE}`;
+      doc.text(footerText, pageWidth / 2, pageHeight - 8, { align: "center" });
+
+      // Nombre de archivo
+      let baseName = pdfNameRaw || `cotizacion_${cliente}`;
+      baseName = baseName.replace(/[^a-zA-Z0-9-_]/g, "_") || "cotizacion";
+      doc.save(`${baseName}.pdf`);
     }
 
     // ================= INIT Y EVENTOS =================
