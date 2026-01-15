@@ -2,519 +2,263 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Cotizador en Línea</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cotizador en Línea</title>
 
-  <!-- jsPDF y AutoTable -->
+  <!-- jsPDF + AutoTable -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
   <style>
-    :root {
-      --primary: #2563eb;
-      --primary-soft: #eff6ff;
-      --bg: #f3f4f6;
-      --card: #ffffff;
-      --border: #e5e7eb;
-      --text-main: #111827;
-      --text-muted: #6b7280;
-      --danger: #dc2626;
-      --radius-lg: 18px;
-      --radius-sm: 10px;
+    :root{
+      --bg:#f3f4f6;
+      --card:#fff;
+      --border:#e5e7eb;
+      --text:#111827;
+      --muted:#6b7280;
+      --primary:#111827;
+      --danger:#dc2626;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh;
+      background:var(--bg);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+      color:var(--text);
+      display:flex; justify-content:center;
+      padding:16px;
+    }
+    .shell{width:100%; max-width:980px}
+    .header{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; margin-bottom:12px;
+    }
+    .title h1{
+      margin:0; font-size:1.35rem; font-weight:800; letter-spacing:.02em;
+    }
+    .title p{margin:4px 0 0; color:var(--muted); font-size:.9rem}
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      border:1px solid rgba(15,23,42,.06);
+      box-shadow:0 12px 30px rgba(15,23,42,.08), 0 0 0 1px rgba(15,23,42,.04);
+      padding:18px;
+    }
+    .section{
+      margin-top:14px;
+      padding-top:14px;
+      border-top:1px solid var(--border);
+    }
+    .section:first-child{margin-top:0;padding-top:0;border-top:0}
+    .section-title{
+      font-size:.85rem;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:var(--muted);
+      margin-bottom:10px;
+      font-weight:800;
+    }
+    .row{display:flex; flex-wrap:wrap; gap:10px}
+    .field{flex:1; min-width:220px; display:flex; flex-direction:column; gap:6px}
+    label{font-size:.8rem; font-weight:700; color:var(--muted)}
+    input, textarea{
+      border:1px solid var(--border);
+      background:#f9fafb;
+      border-radius:12px;
+      padding:10px 12px;
+      font-size:.95rem;
+      outline:none;
+      transition:.15s;
+    }
+    input:focus, textarea:focus{
+      background:#fff;
+      border-color:#9ca3af;
+      box-shadow:0 0 0 3px rgba(17,24,39,.08);
+    }
+    textarea{resize:vertical; min-height:72px}
+
+    /* Items table */
+    .table-wrap{
+      border:1px solid var(--border);
+      border-radius:14px;
+      overflow:hidden;
+      background:#fff;
+    }
+    table{width:100%; border-collapse:collapse; font-size:.92rem}
+    thead{background:#f3f4f6}
+    th,td{padding:10px; border-bottom:1px solid var(--border); vertical-align:top}
+    th{
+      font-size:.75rem;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:var(--muted);
+      text-align:left;
+      font-weight:900;
+    }
+    tbody tr:last-child td{border-bottom:0}
+    td input{
+      width:100%;
+      padding:8px 10px;
+      border-radius:10px;
+      background:#f9fafb;
+    }
+    td input[readonly]{background:#eef2ff; font-weight:800}
+    .item-stack{display:flex; flex-direction:column; gap:8px}
+    .hint{
+      margin-top:8px;
+      font-size:.84rem;
+      color:var(--muted);
+      line-height:1.25;
     }
 
-    * {
-      box-sizing: border-box;
+    .actions{
+      display:flex; flex-wrap:wrap; gap:10px;
+      justify-content:space-between; align-items:center;
+      margin-top:10px;
+    }
+    button{
+      border:0; border-radius:999px;
+      padding:10px 14px;
+      font-weight:900;
+      cursor:pointer;
+      transition:.12s;
+    }
+    .btn-secondary{background:#e5e7eb; color:#111827}
+    .btn-secondary:hover{background:#d1d5db}
+    .btn-primary{background:#111827; color:#fff}
+    .btn-primary:hover{background:#0b1220}
+    .btn-danger{
+      background:var(--danger); color:#fff;
+      padding:8px 10px; border-radius:999px; font-weight:900;
     }
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: var(--bg);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--text-main);
-      display: flex;
-      justify-content: center;
-      padding: 16px;
+    .totals{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+    @media(min-width:820px){
+      .totals{grid-template-columns:repeat(4,minmax(0,1fr))}
     }
 
-    .shell {
-      max-width: 980px;
-      width: 100%;
-    }
-
-    .app-header {
-      color: #111827;
-      text-align: center;
-      margin-bottom: 14px;
-    }
-
-    .app-header h1 {
-      margin: 0 0 4px;
-      font-size: 1.7rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .app-header p {
-      margin: 0;
-      font-size: 0.85rem;
-      color: #6b7280;
-    }
-
-    .card {
-      background: var(--card);
-      border-radius: var(--radius-lg);
-      padding: 18px 16px 20px;
-      box-shadow:
-        0 12px 30px rgba(15, 23, 42, 0.08),
-        0 0 0 1px rgba(15, 23, 42, 0.04);
-    }
-
-    @media (min-width: 768px) {
-      .card {
-        padding: 22px 24px 24px;
+    /* Mobile table -> card */
+    @media (max-width: 640px){
+      .header{flex-direction:column; align-items:flex-start}
+      .field{min-width:100%}
+      table, thead, tbody, tr, td{display:block; width:100%}
+      thead{display:none}
+      tbody tr{
+        border:1px solid var(--border);
+        border-radius:14px;
+        margin:10px 0;
+        padding:10px;
+        box-shadow:0 1px 2px rgba(15,23,42,.05);
       }
-    }
-
-    .section-title {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-muted);
-      margin-bottom: 8px;
-    }
-
-    .section-title::before {
-      content: "";
-      width: 4px;
-      height: 18px;
-      border-radius: 999px;
-      background: linear-gradient(180deg, var(--primary), #4f46e5);
-    }
-
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    .field {
-      flex: 1;
-      min-width: 220px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-
-    input,
-    textarea {
-      padding: 9px 11px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      font-size: 0.9rem;
-      outline: none;
-      transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
-      background-color: #f9fafb;
-    }
-
-    input:focus,
-    textarea:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.5);
-      background-color: #ffffff;
-    }
-
-    textarea {
-      resize: vertical;
-      min-height: 70px;
-    }
-
-    /* Tabla de ítems */
-    .table-wrapper {
-      margin-top: 6px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      overflow: hidden;
-      background: #f9fafb;
-    }
-
-    .table-scroll {
-      width: 100%;
-      overflow-x: auto;
-    }
-
-    .table-hint {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 4px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .table-hint span {
-      font-size: 0.9rem;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.86rem;
-      background: #ffffff;
-    }
-
-    thead {
-      background: #f3f4f6;
-    }
-
-    th,
-    td {
-      padding: 7px 8px;
-      border-bottom: 1px solid #e5e7eb;
-      text-align: left;
-    }
-
-    th {
-      font-weight: 600;
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-    }
-
-    tbody tr:last-child td {
-      border-bottom: none;
-    }
-
-    td input {
-      border-radius: 6px;
-      border: 1px solid transparent;
-      padding: 5px 6px;
-      font-size: 0.86rem;
-      width: 100%;
-      background: transparent;
-    }
-
-    td input:focus {
-      background: #eff6ff;
-      border-color: #bfdbfe;
-      outline: none;
-    }
-
-    td input[readonly] {
-      background: #f9fafb;
-      border-color: transparent;
-      font-weight: 600;
-    }
-
-    .btn-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 10px;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    button {
-      border-radius: 999px;
-      border: none;
-      padding: 9px 16px;
-      font-size: 0.86rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: transform 0.08s ease, box-shadow 0.12s ease, background 0.12s ease;
-      white-space: nowrap;
-    }
-
-    button:active {
-      transform: translateY(1px);
-      box-shadow: none;
-    }
-
-    .btn-secondary {
-      background: #e5e7eb;
-      color: #111827;
-    }
-
-    .btn-secondary:hover {
-      background: #d1d5db;
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: #ffffff;
-      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.3);
-    }
-
-    .btn-primary:hover {
-      background: #1d4ed8;
-    }
-
-    .btn-danger {
-      background: var(--danger);
-      color: #ffffff;
-      padding: 4px 8px;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      box-shadow: none;
-    }
-
-    .btn-danger:hover {
-      background: #b91c1c;
-    }
-
-    .btn-icon {
-      font-size: 1rem;
-      line-height: 0;
-    }
-
-    .totals-card {
-      margin-top: 18px;
-      padding: 12px;
-      border-radius: 14px;
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-    }
-
-    .totals {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin-top: 6px;
-    }
-
-    @media (min-width: 720px) {
-      .totals {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+      td{border-bottom:0; padding:8px 0}
+      td::before{
+        content:attr(data-label);
+        display:block;
+        font-size:.75rem;
+        font-weight:900;
+        color:var(--muted);
+        letter-spacing:.06em;
+        text-transform:uppercase;
+        margin-bottom:6px;
       }
-    }
-
-    .field input[readonly] {
-      background: #eef2ff;
-      font-weight: 600;
-    }
-
-    .pill {
-      padding: 3px 9px;
-      border-radius: 999px;
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      background: var(--primary-soft);
-      color: var(--primary);
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .conditions {
-      margin-top: 16px;
-    }
-
-    .footer-actions {
-      margin-top: 18px;
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .hint {
-      font-size: 0.76rem;
-      color: var(--text-muted);
-    }
-
-    .footer-note {
-      margin-top: 10px;
-      font-size: 0.72rem;
-      color: #9ca3af;
-      text-align: right;
-    }
-
-    /* Mobile: disposición vertical y tarjetas por ítem con stroke claro */
-    @media (max-width: 600px) {
-      body {
-        padding: 10px;
-      }
-      .card {
-        border-radius: 16px;
-        padding: 16px 12px 18px;
-      }
-      .app-header h1 {
-        font-size: 1.4rem;
-      }
-      .app-header p {
-        font-size: 0.8rem;
-      }
-      .row {
-        flex-direction: column;
-      }
-      .field {
-        min-width: 100%;
-      }
-      .btn-row {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .btn-row > * {
-        width: 100%;
-        justify-content: center;
-      }
-      .footer-actions {
-        justify-content: center;
-      }
-      button {
-        width: 100%;
-        justify-content: center;
-      }
-
-      .table-scroll {
-        overflow-x: visible;
-      }
-      table,
-      tbody,
-      tr,
-      td {
-        display: block;
-        width: 100%;
-      }
-      thead {
-        display: none;
-      }
-      tbody tr {
-        margin: 8px 0;
-        padding: 10px 10px 8px;
-        border-radius: 12px;
-        border: 1px solid var(--border); /* stroke de la tarjeta */
-        background: #ffffff;
-        box-shadow: 0 1px 2px rgba(15,23,42,0.04);
-      }
-      tbody tr:last-child td {
-        border-bottom: none;
-      }
-      td {
-        border-bottom: none;
-        padding: 5px 0;
-      }
-      td::before {
-        content: attr(data-label);
-        display: block;
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--text-muted);
-        margin-bottom: 3px;
-      }
-      td:last-child {
-        text-align: right;
-        margin-top: 6px;
-      }
-      td:last-child::before {
-        content: "";
-      }
-      /* stroke claro en los inputs dentro de la tarjeta */
-      tbody tr td input {
-        background: #f9fafb;
-        border-color: #d1d5db;
-      }
-      tbody tr td input:focus {
-        background: #ffffff;
-        border-color: #9ca3af;
-      }
+      td:last-child::before{content:""}
     }
   </style>
 </head>
+
 <body>
   <div class="shell">
-    <header class="app-header">
-      <h1>COTIZADOR EN LÍNEA</h1>
-      <p>Genera y descarga cotizaciones en PDF desde cualquier dispositivo.</p>
-    </header>
+    <div class="header">
+      <div class="title">
+        <h1>Cotizador en línea</h1>
+        <p>Genera cotizaciones profesionales en PDF (logo incrustado para impresión y WhatsApp).</p>
+      </div>
+    </div>
 
     <main class="card">
-      <!-- DATOS GENERALES -->
-      <div class="section-title">Datos generales</div>
-      <div class="row">
-        <div class="field">
-          <label for="fecha">Fecha</label>
-          <input type="date" id="fecha" />
-        </div>
-        <div class="field">
-          <label for="cliente">A nombre de</label>
-          <input type="text" id="cliente" placeholder="Nombre del cliente o empresa" />
-        </div>
-      </div>
-
-      <div class="field">
-        <label for="descripcion">Descripción del trabajo</label>
-        <textarea id="descripcion" placeholder="Ej.: Reparación, instalación o detalle del trabajo a realizar."></textarea>
-      </div>
-
-      <!-- ITEMS -->
-      <div style="margin-top: 18px;">
-        <div class="section-title">
-          Ítems de la cotización
-          <span class="pill">
-            <span>＋</span> Materiales y servicios
-          </span>
-        </div>
-
-        <div class="table-wrapper">
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Ítem / detalle</th>
-                  <th>Cantidad</th>
-                  <th>Precio unitario (L.)</th>
-                  <th>Total ítem (L.)</th>
-                  <th style="text-align:center;"> </th>
-                </tr>
-              </thead>
-              <tbody id="items-body">
-                <!-- Fila inicial -->
-                <tr>
-                  <td data-label="Ítem / detalle"><input type="text" class="item-detalle" placeholder="Ej.: Mano de obra, madera, insumos..." /></td>
-                  <td data-label="Cantidad"><input type="number" step="0.01" class="item-cantidad" placeholder="0" /></td>
-                  <td data-label="Precio unitario (L.)"><input type="number" step="0.01" class="item-precio" placeholder="0.00" /></td>
-                  <td data-label="Total ítem (L.)"><input type="number" step="0.01" class="item-total" readonly /></td>
-                  <td data-label="" style="text-align:center;"><button type="button" class="btn-danger btn-delete-row" title="Eliminar fila">X</button></td>
-                </tr>
-              </tbody>
-            </table>
+      <div class="section">
+        <div class="section-title">Datos generales</div>
+        <div class="row">
+          <div class="field">
+            <label for="fecha">Fecha</label>
+            <input type="date" id="fecha" />
+          </div>
+          <div class="field">
+            <label for="cliente">A nombre de</label>
+            <input type="text" id="cliente" placeholder="Nombre del cliente o empresa" />
           </div>
         </div>
-        <div class="table-hint">
-          En celular, cada ítem se muestra como una tarjeta con un recuadro claro para escribir cada parte.
-        </div>
 
-        <div class="btn-row">
-          <button type="button" class="btn-secondary" id="add-row">
-            <span class="btn-icon">＋</span>
-            Agregar ítem
-          </button>
-          <span class="hint">Completa los materiales y servicios. El total por ítem y los totales se calculan automáticamente.</span>
+        <div class="row" style="margin-top:10px;">
+          <div class="field">
+            <label for="descripcion">Descripción del trabajo</label>
+            <textarea id="descripcion" placeholder="Ej.: Fabricación e instalación, reparación, pintura, etc."></textarea>
+          </div>
         </div>
       </div>
 
-      <!-- TOTALES -->
-      <div class="totals-card">
-        <div class="section-title" style="margin-bottom: 4px;">Totales</div>
+      <div class="section">
+        <div class="section-title">Identidad del PDF</div>
+        <div class="row">
+          <div class="field">
+            <label for="logoFile">Logo (aquí va el logo que se verá en la esquina superior izquierda del PDF).</label>
+            <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp" />
+          </div>
+          <div class="field">
+            <label for="pdfName">Nombre del archivo PDF (opcional)</label>
+            <input type="text" id="pdfName" placeholder="Ej.: cotizacion_cliente_enero" />
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Ítems</div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Ítem / detalle</th>
+                <th style="width:120px;">Cantidad</th>
+                <th style="width:170px;">Precio unitario (L.)</th>
+                <th style="width:170px;">Total ítem (L.)</th>
+                <th style="width:80px; text-align:center;"> </th>
+              </tr>
+            </thead>
+            <tbody id="items-body">
+              <tr>
+                <td data-label="Ítem / detalle">
+                  <div class="item-stack">
+                    <input type="text" class="item-detalle" placeholder="Ej.: Mano de obra, madera, insumos..." />
+                    <input type="text" class="item-desc" placeholder="Descripción opcional (medidas, color, acabado). Si se deja vacía, no afecta el PDF." />
+                  </div>
+                </td>
+                <td data-label="Cantidad"><input type="number" step="0.01" class="item-cantidad" placeholder="0" /></td>
+                <td data-label="Precio unitario (L.)"><input type="number" step="0.01" class="item-precio" placeholder="0.00" /></td>
+                <td data-label="Total ítem (L.)"><input type="number" step="0.01" class="item-total" readonly /></td>
+                <td data-label="" style="text-align:center;">
+                  <button type="button" class="btn-danger btn-delete-row" title="Eliminar fila">X</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn-secondary" id="add-row">Agregar ítem</button>
+          <div class="hint" style="margin:0;">
+            La “descripción opcional” se imprime debajo del ítem solo si la llenas.
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Totales</div>
         <div class="totals">
           <div class="field">
             <label for="subtotal">Subtotal (L.)</label>
@@ -535,48 +279,54 @@
         </div>
       </div>
 
-      <!-- NOMBRE DEL PDF -->
-      <div style="margin-top: 16px;">
-        <div class="section-title">Descarga</div>
-        <div class="field">
-          <label for="pdfName">Nombre del archivo PDF (opcional)</label>
-          <input type="text" id="pdfName" placeholder="Ej.: presupuesto_cliente_maderas" />
-        </div>
-      </div>
-
-      <!-- CONDICIONES -->
-      <div class="conditions">
+      <div class="section">
         <div class="section-title">Condiciones y observaciones</div>
-        <textarea id="condiciones" style="min-height: 80px;"></textarea>
-        <div class="hint" style="margin-top: 4px;">
-          Personaliza estos textos según el tipo de trabajo, forma de pago o vigencia de la oferta.
+        <textarea id="condiciones" style="min-height:90px;"></textarea>
+        <div class="hint">
+          Sugerencia: incluye forma de pago, vigencia, tiempos y alcances (qué incluye y qué no incluye).
         </div>
       </div>
 
-      <!-- ACCIONES -->
-      <div class="footer-actions">
-        <button type="button" class="btn-secondary" id="reset-form">Limpiar formulario</button>
-        <button type="button" class="btn-primary" id="download-pdf">
-          <span class="btn-icon">⬇</span>
-          Descargar PDF profesional
-        </button>
-      </div>
-
-      <div class="footer-note">
-        Generado con Carpinteros HN.
+      <div class="section">
+        <div class="actions" style="justify-content:flex-end;">
+          <button type="button" class="btn-secondary" id="reset-form">Limpiar formulario</button>
+          <button type="button" class="btn-primary" id="download-pdf">Descargar PDF profesional</button>
+        </div>
       </div>
     </main>
   </div>
 
   <script>
-    // ============= CONFIGURACIÓN DE EMPRESA PARA EL PDF =============
-    const COMPANY_NAME = "Carpinteros HN";
-    const COMPANY_ADDRESS = "Servicios en línea";
-    const COMPANY_PHONE = "Tel: 96696605";
-    const COMPANY_EMAIL = "Correo: jorgeruedabeta@gmail.com";
-    const COMPANY_LOGO_URL = null;
+    // ================= CONFIGURACIÓN EMPRESA =================
+    const COMPANY = {
+      name: "Carpinteros HN",
+      address: "Servicios en línea",
+      phone: "Tel: 96696605",
+      email: "Correo: jorgeruedabeta@gmail.com",
+    };
 
-    // ================= FUNCIONES DE CÁLCULO =================
+    // Logo incrustado como DataURL (garantiza que salga en el PDF)
+    let LOGO_DATA_URL = null;
+
+    // Fallback opcional: si estás en servidor, intenta cargar ./img/logo.png
+    async function tryLoadFallbackLogo() {
+      try {
+        const res = await fetch("./img/logo.png", { cache: "no-store" });
+        if (!res.ok) return;
+        const blob = await res.blob();
+        LOGO_DATA_URL = await blobToDataURL(blob);
+      } catch (_) { /* ignore */ }
+    }
+
+    function blobToDataURL(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
     function toNumber(value) {
       if (typeof value !== "string") value = String(value || "");
       value = value.replace(",", ".");
@@ -584,42 +334,48 @@
       return isNaN(n) ? 0 : n;
     }
 
-    function recalcRowTotals() {
+    function money(n) {
+      return toNumber(n).toFixed(2);
+    }
+
+    function recalc() {
       const tbody = document.getElementById("items-body");
       const rows = Array.from(tbody.querySelectorAll("tr"));
       let subtotal = 0;
 
       rows.forEach(row => {
-        const cantidadInput = row.querySelector(".item-cantidad");
-        const precioInput = row.querySelector(".item-precio");
-        const totalInput = row.querySelector(".item-total");
+        const qty = toNumber(row.querySelector(".item-cantidad")?.value);
+        const price = toNumber(row.querySelector(".item-precio")?.value);
+        const total = qty * price;
 
-        const cantidad = toNumber(cantidadInput.value);
-        const precio = toNumber(precioInput.value);
-        const total = cantidad * precio;
-
-        totalInput.value = total ? total.toFixed(2) : "";
+        row.querySelector(".item-total").value = total ? total.toFixed(2) : "";
         subtotal += total;
       });
 
-      const subtotalInput = document.getElementById("subtotal");
-      subtotalInput.value = subtotal.toFixed(2);
+      document.getElementById("subtotal").value = subtotal.toFixed(2);
 
-      const impuestoPorc = toNumber(document.getElementById("impuestoPorc").value);
-      const impuesto = subtotal * (impuestoPorc / 100);
-      document.getElementById("impuesto").value = impuesto.toFixed(2);
-      document.getElementById("total").value = (subtotal + impuesto).toFixed(2);
+      const taxPct = toNumber(document.getElementById("impuestoPorc").value);
+      const tax = subtotal * (taxPct / 100);
+      document.getElementById("impuesto").value = tax.toFixed(2);
+      document.getElementById("total").value = (subtotal + tax).toFixed(2);
     }
 
     function addRow() {
       const tbody = document.getElementById("items-body");
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td data-label="Ítem / detalle"><input type="text" class="item-detalle" placeholder="Material o servicio" /></td>
+        <td data-label="Ítem / detalle">
+          <div class="item-stack">
+            <input type="text" class="item-detalle" placeholder="Material o servicio" />
+            <input type="text" class="item-desc" placeholder="Descripción opcional (medidas, color, acabado). Si se deja vacía, no afecta el PDF." />
+          </div>
+        </td>
         <td data-label="Cantidad"><input type="number" step="0.01" class="item-cantidad" placeholder="0" /></td>
         <td data-label="Precio unitario (L.)"><input type="number" step="0.01" class="item-precio" placeholder="0.00" /></td>
         <td data-label="Total ítem (L.)"><input type="number" step="0.01" class="item-total" readonly /></td>
-        <td data-label="" style="text-align:center;"><button type="button" class="btn-danger btn-delete-row" title="Eliminar fila">X</button></td>
+        <td data-label="" style="text-align:center;">
+          <button type="button" class="btn-danger btn-delete-row" title="Eliminar fila">X</button>
+        </td>
       `;
       tbody.appendChild(tr);
     }
@@ -628,8 +384,7 @@
       const fechaInput = document.getElementById("fecha");
       const today = new Date();
       const offset = today.getTimezoneOffset();
-      const localISODate = new Date(today.getTime() - offset * 60000).toISOString().slice(0, 10);
-      fechaInput.value = localISODate;
+      fechaInput.value = new Date(today.getTime() - offset * 60000).toISOString().slice(0, 10);
 
       document.getElementById("cliente").value = "";
       document.getElementById("descripcion").value = "";
@@ -642,246 +397,335 @@
 
       document.getElementById("condiciones").value =
 `- Precios sujetos a cambios por variación de materiales.
-- Plazo proyectado: 7 días hábiles.
-- La compra de materiales debe realizarse con anticipación para asegurar disponibilidad.
+- Plazo estimado: 7 días hábiles.
+- Materiales se compran con anticipo para asegurar disponibilidad.
 - Cotización válida por 15 días.`;
 
-      recalcRowTotals();
+      recalc();
     }
 
-    // ================= UTILIDADES PDF =================
-    function formatNumber(value) {
-      const n = toNumber(value);
-      return n.toFixed(2);
-    }
+    function collectTableBody() {
+      const rows = Array.from(document.querySelectorAll("#items-body tr"));
+      const body = [];
 
-    function loadImageAsDataUrl(url) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = "Anonymous";
-        img.onload = function () {
-          const canvas = document.createElement("canvas");
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL("image/png"));
-        };
-        img.onerror = reject;
-        img.src = url;
+      rows.forEach(row => {
+        const detalle = (row.querySelector(".item-detalle")?.value || "").trim();
+        const desc = (row.querySelector(".item-desc")?.value || "").trim();
+        const cantidad = (row.querySelector(".item-cantidad")?.value || "").trim();
+        const precio = (row.querySelector(".item-precio")?.value || "").trim();
+        const total = (row.querySelector(".item-total")?.value || "").trim();
+
+        // Mantengo el texto principal en la celda (sin insertar \n),
+        // y paso la descripción por un campo interno para dibujarla en gris/pequeña.
+        const cell0 = { content: detalle || "-", __desc: desc };
+
+        if (detalle || desc || cantidad || precio) {
+          body.push([cell0, cantidad, precio, total]);
+        }
       });
+
+      return body;
     }
 
-    // ================= GENERACIÓN DE PDF (sin azul, estilo profesional) =================
+    // ================= PDF (SIN FIRMAS, SIN ESQUINAS REDONDAS, SIN UNDERLINES DECORATIVOS) =================
     async function generatePDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: "mm", format: "letter" });
 
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const marginLeft = 18;
-      const marginRight = 18;
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const marginL = 16;
+      const marginR = 16;
+      const contentW = pageW - marginL - marginR;
 
-      const fecha = document.getElementById("fecha").value;
-      const cliente = document.getElementById("cliente").value || "Cliente";
-      const descripcion = document.getElementById("descripcion").value || "";
+      const fecha = document.getElementById("fecha").value || "";
+      const cliente = (document.getElementById("cliente").value || "Cliente").trim();
+      const descripcion = (document.getElementById("descripcion").value || "").trim();
+      const impuestoPorc = (document.getElementById("impuestoPorc").value || "0").trim();
       const subtotal = document.getElementById("subtotal").value || "0.00";
-      const impuestoPorc = document.getElementById("impuestoPorc").value || "0";
       const impuesto = document.getElementById("impuesto").value || "0.00";
       const total = document.getElementById("total").value || "0.00";
-      const condiciones = document.getElementById("condiciones").value || "";
+      const condiciones = (document.getElementById("condiciones").value || "").trim();
       const pdfNameRaw = document.getElementById("pdfName").value.trim();
 
-      const tableBody = [];
-      const rows = Array.from(document.getElementById("items-body").querySelectorAll("tr"));
-      rows.forEach(row => {
-        const detalle = row.querySelector(".item-detalle").value || "";
-        const cantidad = row.querySelector(".item-cantidad").value || "";
-        const precio = row.querySelector(".item-precio").value || "";
-        const totalItem = row.querySelector(".item-total").value || "";
-        if (detalle || precio || totalItem) {
-          tableBody.push([detalle, cantidad, precio, totalItem]);
-        }
-      });
-
-      if (tableBody.length === 0) {
-        alert("Agrega al menos un ítem con cantidad y precio antes de generar el PDF.");
+      const body = collectTableBody();
+      if (body.length === 0) {
+        alert("Agrega al menos un ítem antes de generar el PDF.");
         return;
       }
 
-      let cursorY = 16;
-
-      if (COMPANY_LOGO_URL) {
-        try {
-          const imgData = await loadImageAsDataUrl(COMPANY_LOGO_URL);
-          doc.addImage(imgData, "PNG", marginLeft, cursorY - 4, 26, 14);
-        } catch (e) {
-          console.warn("No se pudo cargar el logo:", e);
-        }
+      if (!LOGO_DATA_URL) {
+        await tryLoadFallbackLogo();
       }
 
-      // Encabezado empresa
+      const COL = {
+        ink: [17, 24, 39],
+        muted: [107, 114, 128],
+        line: [210, 210, 210],
+        headerFill: [245, 246, 248],
+        zebra: [250, 250, 250],
+        panelFill: [248, 249, 251],
+      };
+
+      doc.setDrawColor(...COL.line);
+
+      // Header (sin cajas redondeadas / sin “underline” decorativo)
+      const logoSize = 18;
+      const logoX = marginL;
+      const logoY = 14;
+
+      if (LOGO_DATA_URL) {
+        doc.addImage(LOGO_DATA_URL, "PNG", logoX, logoY, logoSize, logoSize);
+      }
+
+      const companyX = LOGO_DATA_URL ? (logoX + logoSize + 8) : marginL;
+      let y = 18;
+
+      doc.setTextColor(...COL.ink);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.text(COMPANY_NAME, marginLeft + 32, cursorY);
+      doc.setFontSize(12);
+      doc.text(COMPANY.name, companyX, y);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.3);
+      doc.setTextColor(...COL.muted);
+      doc.text(COMPANY.address, companyX, y + 5);
+      doc.text(COMPANY.phone, companyX, y + 9);
+      doc.text(COMPANY.email, companyX, y + 13);
+
+      // Meta box (recta)
+      const metaW = 68;
+      const metaH = 24;
+      const metaX = pageW - marginR - metaW;
+      const metaY = 14;
+
+      doc.setDrawColor(...COL.line);
+      doc.setLineWidth(0.35);
+      doc.rect(metaX, metaY, metaW, metaH);
+
+      const quoteNo = `CTZ-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+
+      doc.setTextColor(...COL.ink);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.text("Cotización", metaX + metaW - 4, metaY + 7, { align: "right" });
+
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
-      doc.text(COMPANY_ADDRESS, marginLeft + 32, cursorY + 5);
-      doc.text(COMPANY_PHONE, marginLeft + 32, cursorY + 9);
-      if (COMPANY_EMAIL.trim() !== "") {
-        doc.text(COMPANY_EMAIL, marginLeft + 32, cursorY + 13);
-      }
+      doc.setTextColor(...COL.muted);
+      doc.text(`No.: ${quoteNo}`, metaX + 4, metaY + 13);
+      doc.text(`Fecha: ${fecha || "-"}`, metaX + 4, metaY + 18);
 
-      // Línea separadora
-      doc.setDrawColor(200, 200, 200);
-      doc.setLineWidth(0.3);
-      doc.line(marginLeft, cursorY + 20, pageWidth - marginRight, cursorY + 20);
+      // Cliente (caja recta)
+      y = 46;
 
-      cursorY += 26;
-
-      // Título
+      doc.setTextColor(...COL.ink);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.text("COTIZACIÓN", pageWidth / 2, cursorY, { align: "center" });
-      cursorY += 8;
+      doc.setFontSize(10.5);
+      doc.text("Cliente", marginL, y);
 
-      // Fecha y cliente
+      const clientY = y + 4;
+      const clientH = descripcion ? 22 : 14;
+
+      doc.setLineWidth(0.35);
+      doc.rect(marginL, clientY, contentW, clientH);
+
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.text(`Fecha: ${fecha}`, marginLeft, cursorY);
-      cursorY += 5;
-      const clienteLines = doc.splitTextToSize(`A nombre de: ${cliente}`, pageWidth - marginLeft - marginRight);
-      doc.text(clienteLines, marginLeft, cursorY);
-      cursorY += clienteLines.length * 5 + 2;
+      doc.setTextColor(...COL.ink);
+      const clientLines = doc.splitTextToSize(cliente, contentW - 8);
+      doc.text(clientLines, marginL + 4, clientY + 7);
 
-      // Descripción
-      if (descripcion.trim() !== "") {
-        const descripcionLines = doc.splitTextToSize(`Descripción del trabajo: ${descripcion}`, pageWidth - marginLeft - marginRight);
-        doc.text(descripcionLines, marginLeft, cursorY);
-        cursorY += descripcionLines.length * 5 + 2;
+      if (descripcion) {
+        doc.setTextColor(...COL.muted);
+        doc.setFontSize(9.3);
+        const descLines = doc.splitTextToSize(descripcion, contentW - 8);
+        doc.text(descLines.slice(0, 2), marginL + 4, clientY + 14);
       }
 
-      // Tabla tipo presupuesto, sin azul
+      y = clientY + clientH + 10;
+
+      // Tabla de ítems (grid) + descripción en gris/pequeña bajo el ítem
       doc.autoTable({
-        startY: cursorY + 2,
-        head: [["Ítem / detalle", "Cantidad", "Precio (L.)", "Total ítem (L.)"]],
-        body: tableBody,
+        startY: y,
+        head: [["Ítem / detalle", "Cant.", "Precio (L.)", "Total (L.)"]],
+        body,
         theme: "grid",
-        styles: { fontSize: 9, cellPadding: 2, lineColor: [210, 210, 210], lineWidth: 0.2 },
+        margin: { left: marginL, right: marginR },
+        styles: {
+          font: "helvetica",
+          fontSize: 9.5,
+          cellPadding: { top: 2.3, right: 2.3, bottom: 2.3, left: 2.3 },
+          lineColor: COL.line,
+          lineWidth: 0.25,
+          textColor: COL.ink,
+          overflow: "linebreak",
+          valign: "top",
+        },
         headStyles: {
-          fillColor: [242, 242, 242], // gris claro, sin azul
-          textColor: [0, 0, 0],
-          halign: "left"
+          fillColor: COL.headerFill,
+          textColor: COL.ink,
+          fontStyle: "bold",
+          lineColor: COL.line,
+          lineWidth: 0.25,
         },
+        alternateRowStyles: { fillColor: COL.zebra },
         columnStyles: {
-          0: { cellWidth: 80 },
-          1: { halign: "right", cellWidth: 25 },
-          2: { halign: "right", cellWidth: 35 },
-          3: { halign: "right", cellWidth: 35 }
+          0: { cellWidth: 92 },
+          1: { cellWidth: 18, halign: "right" },
+          2: { cellWidth: 34, halign: "right" },
+          3: { cellWidth: 34, halign: "right" },
         },
-        margin: { left: marginLeft, right: marginRight }
+        didParseCell: function (data) {
+          if (data.section === "body" && data.column.index === 0) {
+            const raw = data.cell.raw || {};
+            const desc = (raw.__desc || "").trim();
+            data.cell.__desc = desc;
+
+            if (desc) {
+              data.cell.styles.minCellHeight = Math.max(data.cell.styles.minCellHeight || 0, 10.5);
+            }
+          }
+        },
+        didDrawCell: function (data) {
+          if (data.section === "body" && data.column.index === 0) {
+            const desc = (data.cell.__desc || "").trim();
+            if (!desc) return;
+
+            const doc = data.doc;
+
+            const prevSize = doc.internal.getFontSize();
+            const prevColor = doc.getTextColor();
+
+            const pad = 2.3;
+            const x = data.cell.x + pad;
+            const baseY = data.cell.y + pad + 4.3;
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.2);
+            doc.setTextColor(107, 114, 128);
+
+            const maxW = data.cell.width - (pad * 2);
+            const lines = doc.splitTextToSize(desc, maxW);
+            doc.text(lines, x, baseY + 4.0);
+
+            doc.setFontSize(prevSize);
+            doc.setTextColor(prevColor);
+          }
+        }
       });
 
-      let finalY = doc.lastAutoTable.finalY + 4;
+      let afterTableY = doc.lastAutoTable.finalY + 8;
 
-      // Bloque de totales
-      const boxWidth = 70;
-      const boxHeight = 24;
-      const boxLeft = pageWidth - marginRight - boxWidth;
-      const boxTop = finalY;
+      // Totales (caja recta)
+      const totalsW = 78;
+      const totalsH = 30;
+      const totalsX = pageW - marginR - totalsW;
+      const totalsY = afterTableY;
 
-      doc.setDrawColor(200, 200, 200);
-      doc.setFillColor(248, 249, 250);
-      if (doc.roundedRect) {
-        doc.roundedRect(boxLeft, boxTop, boxWidth, boxHeight, 2, 2, "DF");
-      } else {
-        doc.rect(boxLeft, boxTop, boxWidth, boxHeight, "DF");
-      }
+      doc.setDrawColor(...COL.line);
+      doc.setLineWidth(0.35);
+      doc.rect(totalsX, totalsY, totalsW, totalsH);
+
+      const rightX = totalsX + totalsW - 5;
 
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      const textX = boxLeft + boxWidth - 2;
-      let lineY = boxTop + 6;
-      doc.text(`Subtotal: L. ${formatNumber(subtotal)}`, textX, lineY, { align: "right" });
-      lineY += 5;
-      doc.text(`Impuesto (${impuestoPorc}%): L. ${formatNumber(impuesto)}`, textX, lineY, { align: "right" });
-      lineY += 6;
+      doc.setFontSize(9.5);
+      doc.setTextColor(...COL.muted);
+      doc.text("Subtotal", totalsX + 5, totalsY + 8);
+      doc.text("Impuesto", totalsX + 5, totalsY + 15);
+
+      doc.setTextColor(...COL.ink);
+      doc.text(`L. ${money(subtotal)}`, rightX, totalsY + 8, { align: "right" });
+      doc.text(`L. ${money(impuesto)} (${impuestoPorc}%)`, rightX, totalsY + 15, { align: "right" });
+
+      doc.setDrawColor(...COL.line);
+      doc.setLineWidth(0.35);
+      doc.line(totalsX + 5, totalsY + 20, totalsX + totalsW - 5, totalsY + 20);
+
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.text(`Total: L. ${formatNumber(total)}`, textX, lineY, { align: "right" });
+      doc.setFontSize(11.5);
+      doc.text("Total", totalsX + 5, totalsY + 27);
+      doc.text(`L. ${money(total)}`, rightX, totalsY + 27, { align: "right" });
 
-      finalY = boxTop + boxHeight + 8;
+      afterTableY = totalsY + totalsH + 10;
 
-      // Condiciones
-      if (condiciones.trim() !== "") {
+      // Condiciones (sin caja)
+      if (condiciones) {
+        if (afterTableY > pageH - 60) {
+          doc.addPage();
+          afterTableY = 18;
+        }
+
+        doc.setTextColor(...COL.ink);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10.5);
+        doc.text("Condiciones y observaciones", marginL, afterTableY);
+
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        const condLines = doc.splitTextToSize(`Condiciones y observaciones:\n${condiciones}`, pageWidth - marginLeft - marginRight);
-        doc.text(condLines, marginLeft, finalY);
+        doc.setFontSize(9.3);
+        doc.setTextColor(...COL.muted);
+        const condLines = doc.splitTextToSize(condiciones, contentW);
+        doc.text(condLines, marginL, afterTableY + 6);
       }
 
-      // Footer profesional
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.setTextColor(150, 150, 150);
-      const footerText = `${COMPANY_NAME} · ${COMPANY_PHONE}`;
-      doc.text(footerText, pageWidth / 2, pageHeight - 8, { align: "center" });
+      // Footer + páginas (sin líneas decorativas)
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
 
-      // Nombre de archivo
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(...COL.muted);
+
+        doc.text(`${COMPANY.name} · ${COMPANY.phone}`, pageW / 2, pageH - 8, { align: "center" });
+        doc.text(`Página ${i} de ${pageCount}`, pageW - marginR, pageH - 8, { align: "right" });
+      }
+
       let baseName = pdfNameRaw || `cotizacion_${cliente}`;
       baseName = baseName.replace(/[^a-zA-Z0-9-_]/g, "_") || "cotizacion";
       doc.save(`${baseName}.pdf`);
     }
 
     // ================= INIT Y EVENTOS =================
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
       resetForm();
 
+      // Opcional: intenta cargar logo desde ./img/logo.png si no has elegido archivo
+      await tryLoadFallbackLogo();
+
+      document.getElementById("logoFile").addEventListener("change", async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        LOGO_DATA_URL = await blobToDataURL(file);
+      });
+
       const tbody = document.getElementById("items-body");
-      const addRowBtn = document.getElementById("add-row");
-      const impuestoPorcInput = document.getElementById("impuestoPorc");
-      const resetBtn = document.getElementById("reset-form");
-      const downloadBtn = document.getElementById("download-pdf");
 
       tbody.addEventListener("input", (e) => {
-        if (
-          e.target.classList.contains("item-cantidad") ||
-          e.target.classList.contains("item-precio")
-        ) {
-          recalcRowTotals();
+        if (e.target.classList.contains("item-cantidad") || e.target.classList.contains("item-precio")) {
+          recalc();
         }
       });
 
       tbody.addEventListener("click", (e) => {
         if (e.target.classList.contains("btn-delete-row")) {
           const row = e.target.closest("tr");
-          const allRows = tbody.querySelectorAll("tr");
-          if (allRows.length > 1) {
-            row.remove();
-          } else {
-            row.querySelectorAll("input").forEach(inp => inp.value = "");
-          }
-          recalcRowTotals();
+          const all = tbody.querySelectorAll("tr");
+          if (all.length > 1) row.remove();
+          else row.querySelectorAll("input").forEach(inp => inp.value = "");
+          recalc();
         }
       });
 
-      addRowBtn.addEventListener("click", () => {
-        addRow();
+      document.getElementById("add-row").addEventListener("click", () => addRow());
+      document.getElementById("impuestoPorc").addEventListener("input", () => recalc());
+
+      document.getElementById("reset-form").addEventListener("click", () => {
+        if (confirm("¿Seguro que deseas limpiar todo el formulario?")) resetForm();
       });
 
-      impuestoPorcInput.addEventListener("input", () => {
-        recalcRowTotals();
-      });
-
-      resetBtn.addEventListener("click", () => {
-        if (confirm("¿Seguro que deseas limpiar todo el formulario?")) {
-          resetForm();
-        }
-      });
-
-      downloadBtn.addEventListener("click", () => {
-        generatePDF();
-      });
+      document.getElementById("download-pdf").addEventListener("click", () => generatePDF());
     });
   </script>
 </body>
