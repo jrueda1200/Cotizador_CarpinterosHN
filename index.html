@@ -415,8 +415,6 @@
         const precio = (row.querySelector(".item-precio")?.value || "").trim();
         const total = (row.querySelector(".item-total")?.value || "").trim();
 
-        // Mantengo el texto principal en la celda (sin insertar \n),
-        // y paso la descripción por un campo interno para dibujarla en gris/pequeña.
         const cell0 = { content: detalle || "-", __desc: desc };
 
         if (detalle || desc || cantidad || precio) {
@@ -427,7 +425,7 @@
       return body;
     }
 
-    // ================= PDF (SIN FIRMAS, SIN ESQUINAS REDONDAS, SIN UNDERLINES DECORATIVOS) =================
+    // ================= PDF =================
     async function generatePDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit: "mm", format: "letter" });
@@ -464,12 +462,11 @@
         line: [210, 210, 210],
         headerFill: [245, 246, 248],
         zebra: [250, 250, 250],
-        panelFill: [248, 249, 251],
       };
 
       doc.setDrawColor(...COL.line);
 
-      // Header (sin cajas redondeadas / sin “underline” decorativo)
+      // Header
       const logoSize = 18;
       const logoX = marginL;
       const logoY = 14;
@@ -493,7 +490,7 @@
       doc.text(COMPANY.phone, companyX, y + 9);
       doc.text(COMPANY.email, companyX, y + 13);
 
-      // Meta box (recta)
+      // Meta box
       const metaW = 68;
       const metaH = 24;
       const metaX = pageW - marginR - metaW;
@@ -516,7 +513,7 @@
       doc.text(`No.: ${quoteNo}`, metaX + 4, metaY + 13);
       doc.text(`Fecha: ${fecha || "-"}`, metaX + 4, metaY + 18);
 
-      // Cliente (caja recta)
+      // Cliente box (dinámica)
       y = 46;
 
       doc.setTextColor(...COL.ink);
@@ -525,27 +522,87 @@
       doc.text("Cliente", marginL, y);
 
       const clientY = y + 4;
-      const clientH = descripcion ? 22 : 14;
 
-      doc.setLineWidth(0.35);
-      doc.rect(marginL, clientY, contentW, clientH);
+      const boxPadX = 4;
+      const innerW = contentW - (boxPadX * 2);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       doc.setTextColor(...COL.ink);
-      const clientLines = doc.splitTextToSize(cliente, contentW - 8);
-      doc.text(clientLines, marginL + 4, clientY + 7);
+      const clientLines = doc.splitTextToSize(cliente, innerW);
 
+      let descLines = [];
       if (descripcion) {
-        doc.setTextColor(...COL.muted);
         doc.setFontSize(9.3);
-        const descLines = doc.splitTextToSize(descripcion, contentW - 8);
-        doc.text(descLines.slice(0, 2), marginL + 4, clientY + 14);
+        doc.setTextColor(...COL.muted);
+        descLines = doc.splitTextToSize(descripcion, innerW);
       }
 
-      y = clientY + clientH + 10;
+      const topPadY = 7;
+      const bottomPadY = 5;
+      const clientLineGap = 4.2;
+      const descLineGap = 3.8;
+      const spacer = descLines.length ? 3 : 0;
 
-      // Tabla de ítems (grid) + descripción en gris/pequeña bajo el ítem
+      const clienteH = clientLines.length * clientLineGap;
+      const descH = descLines.length * descLineGap;
+
+      let clientH = topPadY + clienteH + spacer + descH + bottomPadY;
+
+      const reserveBelow = 18;
+      if (clientY + clientH + reserveBelow > pageH) {
+        doc.addPage();
+        y = 18;
+
+        doc.setTextColor(...COL.ink);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10.5);
+        doc.text("Cliente", marginL, y);
+
+        const newClientY = y + 4;
+
+        clientH = topPadY + clienteH + spacer + descH + bottomPadY;
+
+        doc.setLineWidth(0.35);
+        doc.setDrawColor(...COL.line);
+        doc.rect(marginL, newClientY, contentW, clientH);
+
+        let textY = newClientY + topPadY;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(...COL.ink);
+        doc.text(clientLines, marginL + boxPadX, textY);
+
+        if (descLines.length) {
+          textY += (clientLines.length * clientLineGap) + spacer;
+          doc.setFontSize(9.3);
+          doc.setTextColor(...COL.muted);
+          doc.text(descLines, marginL + boxPadX, textY);
+        }
+
+        y = newClientY + clientH + 10;
+      } else {
+        doc.setLineWidth(0.35);
+        doc.setDrawColor(...COL.line);
+        doc.rect(marginL, clientY, contentW, clientH);
+
+        let textY = clientY + topPadY;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(...COL.ink);
+        doc.text(clientLines, marginL + boxPadX, textY);
+
+        if (descLines.length) {
+          textY += (clientLines.length * clientLineGap) + spacer;
+          doc.setFontSize(9.3);
+          doc.setTextColor(...COL.muted);
+          doc.text(descLines, marginL + boxPadX, textY);
+        }
+
+        y = clientY + clientH + 10;
+      }
+
+      // ===================== TABLA DE ÍTEMS (DESCRIPCIÓN FIX + ANCHO SEGURO) =====================
       doc.autoTable({
         startY: y,
         head: [["Ítem / detalle", "Cant.", "Precio (L.)", "Total (L.)"]],
@@ -576,17 +633,36 @@
           2: { cellWidth: 34, halign: "right" },
           3: { cellWidth: 34, halign: "right" },
         },
+
         didParseCell: function (data) {
           if (data.section === "body" && data.column.index === 0) {
             const raw = data.cell.raw || {};
-            const desc = (raw.__desc || "").trim();
+            const desc = String(raw.__desc || "").trim();
             data.cell.__desc = desc;
+            if (!desc) return;
 
-            if (desc) {
-              data.cell.styles.minCellHeight = Math.max(data.cell.styles.minCellHeight || 0, 10.5);
-            }
+            const doc = data.doc;
+
+            const pad = 2.3;
+            const cellW = Number(data.cell.width) || Number(data.column.width) || 92;
+            const safeMaxW = Math.max(40, cellW - (pad * 2)); // evita wrap letra-por-letra
+
+            const prevSize = doc.internal.getFontSize();
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.2);
+
+            const descLines = doc.splitTextToSize(desc, safeMaxW);
+            data.cell.__descLines = descLines;
+
+            const lh = (8.2 * 1.20) / doc.internal.scaleFactor;
+            const extraH = (descLines.length * lh) + 2.0;
+
+            data.cell.styles.minCellHeight = (data.cell.styles.minCellHeight || 0) + extraH;
+
+            doc.setFontSize(prevSize);
           }
         },
+
         didDrawCell: function (data) {
           if (data.section === "body" && data.column.index === 0) {
             const desc = (data.cell.__desc || "").trim();
@@ -594,20 +670,28 @@
 
             const doc = data.doc;
 
-            const prevSize = doc.internal.getFontSize();
-            const prevColor = doc.getTextColor();
-
             const pad = 2.3;
             const x = data.cell.x + pad;
-            const baseY = data.cell.y + pad + 4.3;
+
+            const mainLines = Array.isArray(data.cell.text) ? data.cell.text : [String(data.cell.text || "")];
+            const mainFontSize = data.cell.styles.fontSize || 9.5;
+            const mainLh = (mainFontSize * 1.20) / doc.internal.scaleFactor;
+
+            const mainStartY = data.cell.textPos?.y ?? (data.cell.y + pad + 4);
+            let yAfterMain = mainStartY + (mainLines.length * mainLh) + 1.6;
+
+            const cellW = Number(data.cell.width) || Number(data.column.width) || 92;
+            const safeMaxW = Math.max(40, cellW - (pad * 2));
+
+            const prevSize = doc.internal.getFontSize();
+            const prevColor = doc.getTextColor();
 
             doc.setFont("helvetica", "normal");
             doc.setFontSize(8.2);
             doc.setTextColor(107, 114, 128);
 
-            const maxW = data.cell.width - (pad * 2);
-            const lines = doc.splitTextToSize(desc, maxW);
-            doc.text(lines, x, baseY + 4.0);
+            const lines = data.cell.__descLines || doc.splitTextToSize(desc, safeMaxW);
+            doc.text(lines, x, yAfterMain);
 
             doc.setFontSize(prevSize);
             doc.setTextColor(prevColor);
@@ -617,7 +701,7 @@
 
       let afterTableY = doc.lastAutoTable.finalY + 8;
 
-      // Totales (caja recta)
+      // Totales
       const totalsW = 78;
       const totalsH = 30;
       const totalsX = pageW - marginR - totalsW;
@@ -650,7 +734,7 @@
 
       afterTableY = totalsY + totalsH + 10;
 
-      // Condiciones (sin caja)
+      // Condiciones
       if (condiciones) {
         if (afterTableY > pageH - 60) {
           doc.addPage();
@@ -669,15 +753,13 @@
         doc.text(condLines, marginL, afterTableY + 6);
       }
 
-      // Footer + páginas (sin líneas decorativas)
+      // Footer + páginas
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
-
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8);
         doc.setTextColor(...COL.muted);
-
         doc.text(`${COMPANY.name} · ${COMPANY.phone}`, pageW / 2, pageH - 8, { align: "center" });
         doc.text(`Página ${i} de ${pageCount}`, pageW - marginR, pageH - 8, { align: "right" });
       }
@@ -690,8 +772,6 @@
     // ================= INIT Y EVENTOS =================
     document.addEventListener("DOMContentLoaded", async () => {
       resetForm();
-
-      // Opcional: intenta cargar logo desde ./img/logo.png si no has elegido archivo
       await tryLoadFallbackLogo();
 
       document.getElementById("logoFile").addEventListener("change", async (e) => {
